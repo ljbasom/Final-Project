@@ -1,0 +1,147 @@
+---
+title: "Final Project"
+subtitle: "Preliminary EDA"
+author: "Levi Basom"
+output: html_notebook
+---
+
+## Research Question
+
+The reasearch question I am choosing to ask is:
+
+**Could relevant firearm permit numbers in a year have some explanation for trends in violent crime data and hunting data?**
+
+By choosing to ask this type of question, I will need to find AT LEAST 3 relevant data sets and think of ways to combine them to create graphs and statistics that help to answer parts of this question.
+
+My first (and primary) data source will be the firarm permit data, because it will separately be related to my other two data sources. My second data source will be the hunting data, and my third will be the violent crime data.
+
+I will look at how increases in certain types of firearm permits could relate to increases in hunting data, and how firearm permits for certain states can relate to violent crime within those states over certain periods of time, and if these fluctuations in both data tend to increase and decrease together, or mutually.
+
+## Data Sources
+
+### Load required packages
+
+Before beginning my analysis, I need to load relevant packages that will allow my data to be loaded with the least problems and stored in a clean way, as well as ones that will give me the ability to create graphics and plots that show trends and patterns in the data. Packages that will help with this project (whether they will be used or not) are `ggplot2`, `tidyr`, `mosaic`, `DataComputing`, `readr`, and `data.table`.
+
+```{r}
+install.packages("data.table")
+```
+
+```{r}
+library(ggplot2)
+library(tidyr)
+library(mosaic)
+library(DataComputing)
+library(readr)
+library(data.table)
+```
+
+### Finding data sets
+
+I will have to search for reputable and adequate data sources to match the three data sets that I intend to use in this project. After some time in searching with certain criteria in mind, I was able to find 3 sources. My primary data source was found from a routinely maintained Github repository that collects NICS firearm data over the years and constantly updates each month. My second source is Pennsylvania hunting data straight from the Pennsylvania Game Commission website, and my third data set is crime data for New Jersey from the FBI Uniform Crime Reporting Statistics website.
+
+#### Primary data:
+
+The NICS Firearm Background Check Data is my primary data set for 3 main reasons:
+
+1. The data encompasses all U.S. states and territories, making it easy to look at trends for individual states over the years.
+
+2. The data has many variables relating to different types of guns, and includes many types of sales, like regular sales, private sales, returned sales, and many others.
+
+3. The data breaks each year down into months and by state, so it is very specific and encompasses a large range of detail and information.
+
+The data within this data set comes directly from the FBI National Instant Criminal Background Check System (NICS), and is collected and maintained from that website by Buzzfeed News with great documentation and reputability. 
+
+The NICS data was collected to keep a very close estimate of firearm sales and possession per state and how that number has been increasing/decreasing over time. The data collection began (by the FBI) in **1998**, and has been consistenly collected and updated from 1998 until currently (**the latest data is from March of 2020**).
+
+Each case in the data is uniquely defined by year, month, and state, so every case shows the count of certain types of permits for a certain state or territory in a given month of a year. There are **14,135** cases in the most updated state of the data set that I will be using for this project.
+
+From all variables in this data set, I will be using the ones most relevant to either of the two secondary data sets that I will be using. There are three categories for guns in the NICS data: handgun, long gun, and other. For the hunting data, I will be using variables that relate to the most common types of guns used in hunting, like `long_gun`, `other`, `prepawn_long_gun`, `prepawn_other`, etc. For the crime data, I will most likely take a look at `handgun`, `prepawn_handgun`, etc. because handguns are the most common firearm used in crime, but I may also look into all types of firearms to see how the trends change.
+
+Since this data set encompasses many less years than the other two data sets, I will most likely need to filter out a lot of the earlier rows in the other data sets in order to make relevant inferences when comparing data from two sets.
+
+To load the data set from the Github URL, I will use `read_csv` to create a `NICS` table:
+
+```{r}
+NICS_URL <- "https://raw.githubusercontent.com/BuzzFeedNews/nics-firearm-background-checks/master/data/nics-firearm-background-checks.csv"
+NICS <- read_csv(NICS_URL)
+
+NICS
+```
+
+#### Other data sources:
+
+I was able to find a useful table on the Pennsylvania Game Commission website for hunting data in Pennsylvania. This data is collected and maintained by the PA Game Commission by measuring the number of tags for each killed animal that is reported (tag collected). The table on the website is titled "White-Tailed Deer, Bear, & Wild Turkey Harvest Information". The data contains information for years spanning **1915 through 2015**, so I am assuming that it has not been updated recently (but still relevant for the years that it contains). This data was collected with the goal of watching trends in hunting data for each provided species of animal over the years. A case in this data represents the amount of tags collected for each species of animal in a given year, and there are **101 cases**. Variables that I plan on using from this data set are `year`, `Total Deer`, and `Fall Turkey Harvest`, because these are the largest values and those that would be most relevant to the NICS data.
+
+To import this table to RStudio, I first had to copy and paste the table into an Excel spreadsheet. I then cleaned the data by changing empty cells to "0" and removing all comma values. After cleaning the data a bit, I saved the Excel spreadsheet to my desktop as a CSV file, and used the `data.table` package with a `file.choose` function to select and import the CSV file, which ended up being successful. I saved this table as `PAHunting`.
+
+```{r}
+file_name <- 
+  file.choose()
+
+PAHunting <-
+  data.table::fread(file_name)
+
+PAHunting
+```
+
+My final data source is crime data from the FBI Uniform Crime Reporting Statistics (UCR) website. This division of the FBI collects crime data for each state on a year-by-year basis. The website has a helpful table builder tool that allows its users to select different aspects of the data to be put into a table that can be exported. For example, users can select any state or states that they desire, and different types of crime (or all types) that they want to be displayed in the data table. This data is collected and maintained by the FBI, and was collected to measure trends and changes in different types of crime across all states over a large span of years (**1960-2014**). I wanted to create a table that only shows crime data for New Jersey, because selecting multiple states would require a combination of many tables that I would have to do myself, which I feel would take too much time considering working on this project by myself and with limited time. A case in the New Jersey table that I created represents counts of different types of crimes for a certain year, and there are **55 cases**. When relating this data to the NICS data, I plan on using variables related to crime that would most likely be committed by a firearm. This would encompass variables like `Year`, `Population`, `Violent crime total` and then more specific variables related to certain types of violent crime.
+
+To load this table into RStudio, I simply saved the table I created from the FBI UCR website to my desktop as a CSV file and imported it the same way as I imported the PA hunting table, using `file.choose()` and `fread` from the `data.table` package. I saved this table as `NJCrime`.
+
+```{r}
+file_name2 <- 
+  file.choose()
+
+NJCrime <-
+  data.table::fread(file_name2) %>%
+  head(55)
+
+NJCrime
+```
+
+## Exploring intuition
+
+In order to get a good grounding for this project and start on the right path, I need to do some preliminary plotting and observations to find direction and motivation for the work that I will be doing with these data sets in the near future. 
+
+To start I want to look at the `NICS` data and filter it by `state`, using New Jersey to create graphs that begin to show trends in handgun permits by year for solely the NICS data:
+
+```{r}
+NICS %>%
+  filter(state=="New Jersey") %>%
+  ggplot(aes(x=month, y=handgun)) + geom_point(aes(color=state))
+```
+
+As is obvious by looking at the "month" x-axis, I will need to separate the `month` variable into `year` and `month` for the future of this project, because the x-axis is far too cluttered to even see what month is what, and the data points are so clustered together. I will need to separate these variables and then group by year to find handgun totals for each year to make the data more clear and relate it to the other data sets (that only have years, not months and years).
+
+Although the data is quite clustered and unclear, we can still see that there was an exponential increase in handgun permits at some point towards the middle of the graph (around 2008), and after this increase, the data has various peaks and troughs (meaning that something caused New Jersey residents to purchase more handguns during those months/years for some reason).
+
+For our next plot, we can look at the `NJCrime` table to produce a plot of `Year` versus the proportion of violent crime to population (`Violent crime rate`) to make sure we account for increase in population, for 1999 through 2014:
+
+
+```{r}
+NJCrime %>%
+  rename(violentrate = 'Violent Crime rate') %>%
+  ggplot(aes(x=as.integer(Year), y=violentrate)) + geom_point() + geom_smooth(span=.3)
+```
+
+From this plot, we can see an interesting trend in the rate of violent crime in New Jersey from 1960 to 2014. While violent crime rates were on an upward trend for many years, they seemed to have peaked in 1990-1992 and have been consistently declining ever since. It will be interesting to see if the same trend will be observed within the NICS data for New Jersey, because the handgun data seems to follow a somewhat similar trend. It rises for a while, but instead of declning consistently, it seems to bounce between highs and lows for a while with numbers all over the place. This NICS handgun data does not take population into account, so we will be able to get a better understanding of trends once we can join the `NICS` and `NJCrime` tables to have population become a bigger factor in the NICS data for New Jersey.
+
+For our final plot in this intial observation of our data, we will look at the Pennsylvania hunting data. I want to see if the rates of deer and turkey harvest are rising and falling steadily. To do this, I will mutate a new variable that divides `Fall Turkey Harvest` by `Total Deer` and plots this proportion over all years. If the line is flat, we can conclude that these numbers do tend to move together. If it slopes up, that means the number of turkeys goes up faster than the number of deer over the years, and if it slopes down, that means the number of deer goes up faster than the number of turkeys over the years:
+
+```{r}
+PAHunting %>% 
+  rename(totalDeer = "Total Deer", totalTurkey = "Fall Turkey Harvest") %>%
+  mutate(proportion = totalTurkey/totalDeer) %>%
+  ggplot(aes(x=Year, y=proportion)) + ylim(-3, 3) + geom_point()+ geom_smooth()
+```
+
+This graph shows while at first the proportion was more strongly weighted by turkey (almost twice as many for a few years), this proportion evened out around 1930 and has stayed fairly consistent since then, meaning that the rates of success in turkey hunting and deer hunting have changed with one another since 1930.
+
+## Closing remarks
+
+I feel very confident after completing this preliminary EDA for my final project. Although I have the challenge of working alone and doing everything by myself, I was able to successfully find three relevant data sets, one primary that I will be spending a majority of the analysis working on, and two supporting data sets to look into with the help of the primary data set.
+
+Moving from this point, I have a lot of work to do. I will need to clean some variables within my tables in different ways, from removing spaces in variable names to splitting the `month` variable in the `NICS` table into `month` and `year` to allow for relevant and useful grouping. I also need to adjust some variable types from characters to integers and vice versa, and make sure I account for null values and other phenomena in my data sets that I may overlook and that could give me false information in my graphics or results of my analysis.
+
+In terms of plots, I plan on looking more into narrowing my NICS data to look specifically at certain states or gun types to create facets in my graphics or color my glyphs based on these variables to get even more interesting and visually pleasing plots. I also would like to look into getting the Pennsylvania crime statistics table from the FBI UCR website so that I can join it with the New Jersey one and create some comparison graphics for different crimes across both states. I think that this preliminary EDA set me in the right direction and helped me to think about what the future of this project holds, and I look forward to finding some more intersting trends and statistics within my data sets (and how they relate to one another in interesting ways).
